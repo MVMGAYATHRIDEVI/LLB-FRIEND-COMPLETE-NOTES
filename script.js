@@ -1,156 +1,126 @@
 
-const pdfFolder = "Complete%20Notes/";
+document.addEventListener("DOMContentLoaded", function () {
 
-const subjects = [
-    {
-        name: "Law of Contract I",
-        icon: "📜",
-        file: "Contracts Law-1 complete notes.pdf"
-    },
-    {
-        name: "Constitutional Law I",
-        icon: "⚖️",
-        file: "Constitution Law-1 complete notes.pdf"
-    },
-    {
-        name: "Family Law I",
-        icon: "👨‍👩‍👧",
-        file: "Family Law-1 complete notes.pdf"
-    },
-    {
-        name: "Law of Torts",
-        icon: "🏛️",
-        file: "Law of Torts complete notes.pdf"
-    },
-    {
-        name: "Cyber Law",
-        icon: "💻",
-        file: "Cyber Law complete notes.pdf"
-    }
-];
+    const resources = [
+        {
+            subject: "Constitutional Law - I",
+            filename: "Constitution Law-1 complete notes.pdf",
+            icon: "⚖️"
+        },
+        {
+            subject: "Contracts Law - I",
+            filename: "Contracts Law-1 complete notes.pdf",
+            icon: "📜"
+        },
+        {
+            subject: "Cyber Law",
+            filename: "Cyber Law complete notes.pdf",
+            icon: "💻"
+        },
+        {
+            subject: "Family Law",
+            filename: "Family Law complete notes.pdf",
+            icon: "👨‍👩‍👧"
+        },
+        {
+            subject: "Law of Torts",
+            filename: "Law of Torts complete notes.pdf",
+            icon: "📚"
+        }
+    ];
 
-const resourceGrid = document.getElementById("resourceGrid");
-const searchInput = document.getElementById("searchInput");
-const noResults = document.getElementById("noResults");
-const resourceCount = document.getElementById("resourceCount");
+    const grid = document.getElementById("resourceGrid");
+    const search = document.getElementById("searchInput");
+    const count = document.getElementById("resourceCount");
+    const noResults = document.getElementById("noResults");
 
-let availableSubjects = [];
+    document.getElementById("year").textContent =
+        new Date().getFullYear();
 
-document.getElementById("year").textContent = new Date().getFullYear();
+    function displayResources() {
 
-function getPdfPath(fileName) {
-    return `${pdfFolder}${encodeURIComponent(fileName)}`;
-}
+        grid.innerHTML = "";
 
-async function checkPdfExists(path) {
-    try {
-        const response = await fetch(path, { method: "HEAD" });
-        return response.ok;
-    } catch (error) {
-        console.error("Unable to check PDF:", path, error);
-        return false;
-    }
-}
+        resources.forEach(resource => {
 
-function createSubjectCard(subject) {
-    const card = document.createElement("article");
-    card.className = "resource-card";
+            const card = document.createElement("div");
+            card.className = "resource-card";
 
-    const filePath = getPdfPath(subject.file);
+            const icon = document.createElement("div");
+            icon.className = "resource-icon";
+            icon.textContent = resource.icon;
 
-    const statusHTML = subject.available
-        ? `<span class="status available">PDF Available</span>`
-        : `<span class="status missing">No records found</span>`;
+            const title = document.createElement("h3");
+            title.textContent = resource.subject;
 
-    const actionsHTML = subject.available
-        ? `
-            <a class="action-button read-button"
-               href="${filePath}"
-               target="_blank"
-               rel="noopener">
-               Read PDF
-            </a>
+            const description = document.createElement("p");
+            description.textContent = "Complete Subject Notes";
 
-            <a class="action-button download-button"
-               href="${filePath}"
-               download="${subject.file}">
-               Download PDF
-            </a>
-        `
-        : `
-            <span class="action-button disabled-button">
-                PDF Not Available
-            </span>
-        `;
+            const actions = document.createElement("div");
+            actions.className = "resource-actions";
 
-    card.innerHTML = `
-        <div class="card-top">
-            <div class="subject-icon">${subject.icon}</div>
+            const pdfURL = new URL(
+                "./" +
+                encodeURIComponent("complete notes") +
+                "/" +
+                encodeURIComponent(resource.filename),
+                document.baseURI
+            ).href;
 
-            <div class="subject-details">
-                <h3>${subject.name}</h3>
-                <p>Complete LLB Study Notes</p>
-                ${statusHTML}
-            </div>
-        </div>
+            const read = document.createElement("a");
+            read.href = pdfURL;
+            read.target = "_blank";
+            read.rel = "noopener noreferrer";
+            read.className = "read-button";
+            read.textContent = "Read PDF";
 
-        <div class="card-actions">
-            ${actionsHTML}
-        </div>
-    `;
+            const download = document.createElement("a");
+            download.href = pdfURL;
+            download.download = resource.filename;
+            download.className = "download-button";
+            download.textContent = "Download PDF";
 
-    return card;
-}
+            actions.append(read, download);
 
-function displaySubjects(list) {
-    resourceGrid.innerHTML = "";
+            card.append(icon, title, description, actions);
 
-    if (list.length === 0) {
-        noResults.hidden = false;
-        return;
+            grid.appendChild(card);
+
+        });
+
+        count.textContent =
+            resources.length + " Subject-wise Complete Notes";
+
+        filterResources();
     }
 
-    noResults.hidden = true;
+    function filterResources() {
 
-    list.forEach(subject => {
-        resourceGrid.appendChild(createSubjectCard(subject));
-    });
-}
+        const term = search.value.toLowerCase().trim();
 
-async function loadSubjects() {
-    resourceCount.textContent = "Checking available PDF files...";
+        const cards = grid.querySelectorAll(".resource-card");
 
-    const checkedSubjects = await Promise.all(
-        subjects.map(async subject => {
-            const path = getPdfPath(subject.file);
+        let visible = 0;
 
-            return {
-                ...subject,
-                available: await checkPdfExists(path)
-            };
-        })
-    );
+        cards.forEach(card => {
 
-    availableSubjects = checkedSubjects;
+            const subject = card.querySelector("h3")
+                .textContent.toLowerCase();
 
-    const availableCount = checkedSubjects.filter(
-        subject => subject.available
-    ).length;
+            const match = subject.includes(term);
 
-    resourceCount.textContent =
-        `${availableCount} of ${subjects.length} PDF files available`;
+            card.style.display = match ? "" : "none";
 
-    displaySubjects(availableSubjects);
-}
+            if (match) visible++;
 
-searchInput.addEventListener("input", function () {
-    const searchText = this.value.trim().toLowerCase();
+        });
 
-    const filteredSubjects = availableSubjects.filter(subject =>
-        subject.name.toLowerCase().includes(searchText)
-    );
+        noResults.hidden = visible !== 0;
 
-    displaySubjects(filteredSubjects);
+    }
+
+    search.addEventListener("input", filterResources);
+
+    displayResources();
+
 });
-
-loadSubjects();
